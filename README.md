@@ -49,7 +49,12 @@ cd build
 nmake
 ```
 
-Z3 uses C++20. The recommended version of Visual Studio is therefore VS2019 or later. 
+Z3 uses C++20. The recommended version of Visual Studio is therefore VS2019 or later.
+
+**Security Features (MSVC)**: When building with Visual Studio/MSVC, a couple of security features are enabled by default for Z3:
+- Control Flow Guard (`/guard:cf`) - enabled by default to detect attempts to compromise your code by preventing calls to locations other than function entry points, making it more difficult for attackers to execute arbitrary code through control flow redirection
+- Address Space Layout Randomization (`/DYNAMICBASE`) - enabled by default for memory layout randomization, required by the `/GUARD:CF` linker option
+- These can be disabled using `python scripts/mk_make.py --no-guardcf` (Python build) or `cmake -DZ3_ENABLE_CFG=OFF` (CMake build) if needed
 
 ## Building Z3 using make and GCC/Clang
 
@@ -224,6 +229,10 @@ A WebAssembly build with associated TypeScript typings is published on npm as [z
 
 Project [MachineArithmetic](https://github.com/shingarov/MachineArithmetic) provides a Smalltalk interface
 to Z3's C API. For more information, see [MachineArithmetic/README.md](https://github.com/shingarov/MachineArithmetic/blob/pure-z3/MachineArithmetic/README.md).
+
+### AIX
+
+[Build settings for AIX are described here.](https://github.com/Z3Prover/z3/pull/8113)
 
 ## System Overview
 

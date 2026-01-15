@@ -611,6 +611,9 @@ namespace smt {
         // create the axiom:
         // n = bv2int(k) = ite(bit2bool(k[sz-1],2^{sz-1},0) + ... + ite(bit2bool(k[0],1,0))
         // 
+        SASSERT(params().m_bv_enable_int2bv2int);
+        if (!ctx.e_internalized(n))
+            internalize_term(n);
         SASSERT(ctx.e_internalized(n));
         SASSERT(m_util.is_ubv2int(n));
         TRACE(bv2int_bug, tout << "bv2int:\n" << mk_pp(n, m) << "\n";);
@@ -686,6 +689,8 @@ namespace smt {
         //   bit2bool(i,n) == ((e div 2^i) mod 2 != 0)
         // for i = 0,.., sz-1
         //
+        if (!ctx.e_internalized(n))
+            internalize_term(n);
         SASSERT(ctx.e_internalized(n));
         SASSERT(m_util.is_int2bv(n));
 
@@ -889,7 +894,7 @@ namespace smt {
 
     bool theory_bv::internalize_term_core(app * term) {
         SASSERT(term->get_family_id() == get_family_id());
-        TRACE(bv, tout << "internalizing term: " << mk_bounded_pp(term, m) << "\n";);
+        TRACE(bv, tout << "internalizing term: #" << term->get_id() << " " << mk_bounded_pp(term, m) << "\n";);
         if (approximate_term(term)) {
             return false;
         }
@@ -1450,7 +1455,7 @@ namespace smt {
                                    << num_scopes << " = " << (ctx.get_scope_level() - num_scopes) << "\n"););
     }
 
-    final_check_status theory_bv::final_check_eh() {
+    final_check_status theory_bv::final_check_eh(unsigned level) {
         SASSERT(check_invariant());
         if (m_approximates_large_bvs) {
             return FC_GIVEUP;
@@ -1890,6 +1895,8 @@ namespace smt {
 
     theory_bv::var_enode_pos theory_bv::get_bv_with_theory(bool_var v, theory_id id) const {
         atom* a      = get_bv2a(v);
+        if (!a)
+            return var_enode_pos(nullptr, UINT32_MAX);
         svector<var_enode_pos> vec;
         if (!a->is_bit())
             return var_enode_pos(nullptr, UINT32_MAX);

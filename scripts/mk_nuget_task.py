@@ -27,12 +27,11 @@ os_info = {  'x64-ubuntu-latest' : ('so', 'linux-x64'),
              'x64-glibc-2.35' : ('so', 'linux-x64'),
              'x64-win' : ('dll', 'win-x64'),
              'x86-win' : ('dll', 'win-x86'),
+             'arm64-win' : ('dll', 'win-arm64'),
              'x64-osx' : ('dylib', 'osx-x64'),
+             'arm64-glibc' : ('so', 'linux-arm64'),
+             'arm64-osx' : ('dylib', 'osx-arm64'),
              'debian' : ('so', 'linux-x64') }
-
-# Nuget not supported for ARM
-#'arm-glibc-2.35' : ('so', 'linux-arm64'),
-#'arm64-osx' : ('dylib', 'osx-arm64'),
 
         
 
@@ -45,10 +44,20 @@ def classify_package(f, arch):
     return None
 
 def replace(src, dst):
+    """
+    Replace destination file with source file.
+    
+    Removes the destination file if it exists, then moves the source file to the destination.
+    This ensures that the file is always moved, whether or not the destination exists.
+    
+    Previous buggy implementation only moved when removal failed, causing files to be 
+    deleted but not replaced when the destination already existed.
+    """
     try:
         os.remove(dst)
     except:
-        shutil.move(src, dst)
+        pass
+    shutil.move(src, dst)
     
 def unpack(packages, symbols, arch):
     # unzip files in packages
@@ -69,7 +78,7 @@ def unpack(packages, symbols, arch):
             zip_ref.extract(f"{package_dir}/bin/libz3.{ext}", f"{tmp}")
             mk_dir(f"out/runtimes/{dst}/native")
             replace(f"{tmp}/{package_dir}/bin/libz3.{ext}", f"out/runtimes/{dst}/native/libz3.{ext}")            
-            if "x64-win" in f or "x86-win" in f:
+            if "x64-win" in f or "x86-win" in f or "arm64-win" in f:
                 mk_dir("out/lib/netstandard2.0/")
                 if symbols:
                     zip_ref.extract(f"{package_dir}/bin/libz3.pdb", f"{tmp}")

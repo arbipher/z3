@@ -33,10 +33,11 @@ namespace nla {
         void add_bounded_division(lpvar q, lpvar x, lpvar y);
         void check_bounded_divisions();
         void set_relevant(std::function<bool(lpvar)>& is_relevant);
+        void updt_params(params_ref const& p);
         void push();
         void pop(unsigned scopes);
         bool need_check();
-        lbool check();
+        lbool check(unsigned level);
         void propagate();
         void simplify() { m_core->simplify(); }
         lbool check_power(lpvar r, lpvar x, lpvar y);
