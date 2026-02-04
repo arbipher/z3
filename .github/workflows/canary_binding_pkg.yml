@@ -1,4 +1,4 @@
-name: OCaml Binding CI (Ubuntu + macOS)
+name: Canary Testing for Bindings and Packages
 on:
   push:
     branches:
@@ -7,15 +7,17 @@ on:
     branches:
     - "**"
 jobs:
-  build-test:
+  setup:
     strategy:
       matrix:
         os:
         - ubuntu-latest
+        - macos-latest
         ocaml-version:
         - "5"
       fail-fast: false
     runs-on: ${{ matrix.os }}
+    name: setup (${{ matrix.os }})
     steps:
     - name: Checkout code
       uses: actions/checkout@v6.0.1
@@ -49,6 +51,8 @@ jobs:
         brew install gmp pkg-config ninja ccache
     - name: Install required opam packages
       run: opam install -y ocamlfind zarith
+  build-and-test:
+    steps:
     - name: Configure with CMake
       env:
         CC: ${{ matrix.os == 'macos-latest' && 'ccache clang' || 'ccache gcc' }}
