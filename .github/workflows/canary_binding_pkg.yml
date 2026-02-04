@@ -52,6 +52,15 @@ jobs:
     - name: Install required opam packages
       run: opam install -y ocamlfind zarith
   build-and-test:
+    name: build-and-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu-latest
+        - macos-latest
     steps:
     - name: Configure with CMake
       env:
