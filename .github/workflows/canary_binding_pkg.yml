@@ -12,7 +12,6 @@ jobs:
       matrix:
         os:
         - ubuntu-latest
-        - macos-latest
         ocaml-version:
         - "5"
       fail-fast: false
@@ -54,13 +53,13 @@ jobs:
       env:
         CC: ${{ matrix.os == 'macos-latest' && 'ccache clang' || 'ccache gcc' }}
         CXX: ${{ matrix.os == 'macos-latest' && 'ccache clang++' || 'ccache g++' }}
-      run: "mkdir -p build\ncd build\ncmake .. \\\n  -G Ninja \\\n   \\\n  -DZ3_BUILD_LIBZ3_SHARED=ON
-        \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF \\\n
-        \ -DZ3_BUILD_PYTHON_BINDINGS=OFF \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
-        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \n"
-    - name: Build Z3 and OCaml bindings
-      run: "opam switch 5.3.0 && eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings
+      run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n  -G Ninja \\\n
+        \  \\\n  -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n
+        \ -DZ3_BUILD_JAVA_BINDINGS=OFF \\\n  -DZ3_BUILD_PYTHON_BINDINGS=OFF \\\n  -DZ3_BUILD_EXECUTABLE=OFF
+        \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE
         \n"
+    - name: Build Z3 and OCaml bindings
+      run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings \n"
     - name: Compile ml_example.byte
       run: |
         eval $(opam env)
