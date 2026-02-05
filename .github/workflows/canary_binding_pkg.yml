@@ -7,61 +7,21 @@ on:
     branches:
     - "**"
 jobs:
-  setup:
+  build-and-test:
+    name: build-and-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
         - ubuntu-latest
         - macos-latest
         ocaml-version:
         - "5"
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    name: setup (${{ matrix.os }})
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6.0.1
-    - name: Cache ccache
-      uses: actions/cache@v5
+    - uses: ./.github/actions/ocaml-setup
       with:
-        path: ~/.ccache
-        key: ${{ runner.os }}-ccache-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-ccache-
-    - name: Cache opam
-      uses: actions/cache@v5
-      with:
-        path: ~/.opam
-        key: ${{ runner.os }}-opam-${{ matrix.ocaml-version }}-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-opam-${{ matrix.ocaml-version }}-
-    - uses: ocaml/setup-ocaml@v3
-      with:
-        ocaml-compiler: ${{ matrix.ocaml-version }}
-        opam-disable-sandboxing: true
-    - name: Install system dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          bubblewrap m4 libgmp-dev pkg-config ninja-build ccache
-    - name: Install system dependencies (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install gmp pkg-config ninja ccache
-    - name: Install required opam packages
-      run: opam install -y ocamlfind zarith
-  build-and-test:
-    name: build-and-test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    needs: setup
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-        - ubuntu-latest
-        - macos-latest
-    steps:
+        ocaml-version: ${{ matrix.ocaml-version }}
     - name: Configure with CMake
       env:
         CC: ${{ matrix.os == 'macos-latest' && 'ccache clang' || 'ccache gcc' }}
@@ -86,6 +46,7 @@ jobs:
     - name: Run ml_example.byte
       run: |
         eval $(opam env)
+        # only macOS need this fix
         export DYLD_LIBRARY_PATH=$(pwd)/build
         ocamlrun ./ml_example.byte
     - name: Compile ml_example (native)
@@ -102,16 +63,20 @@ jobs:
         export DYLD_LIBRARY_PATH=$(pwd)/build
         ./ml_example
   packaging:
-    name: build-and-test (${{ matrix.os }})
+    name: packaging (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: setup
     strategy:
       fail-fast: false
       matrix:
         os:
         - ubuntu-latest
         - macos-latest
+        ocaml-version:
+        - "5"
     steps:
+    - uses: ./.github/actions/ocaml-setup
+      with:
+        ocaml-version: ${{ matrix.ocaml-version }}
     - name: Install package
       run: |
         eval $(opam env)
