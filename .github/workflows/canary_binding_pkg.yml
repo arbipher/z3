@@ -101,3 +101,33 @@ jobs:
       run: |
         export DYLD_LIBRARY_PATH=$(pwd)/build
         ./ml_example
+  packaging:
+    name: build-and-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu-latest
+        - macos-latest
+    steps:
+    - name: Install package
+      run: |
+        eval $(opam env)
+        opam repo add my-opam-fork https://github.com/arbipher/opam-repository.git
+        opam install z3.dev --verbose
+    - name: Compile ml_example_with_pkg.byte
+      run: |
+        eval $(opam env)
+        ocamlfind ocamlc -package z3 -linkpkg -o ml_example_with_pkg.byte ml_example.ml
+    - name: Run ml_example_with_pkg.byte
+      run: |
+        eval $(opam env)
+        ocamlrun ./ml_example_with_pkg.byte
+    - name: Compile ml_example_with_pkg (native)
+      run: |
+        eval $(opam env)
+        ocamlfind ocamlopt -package z3 -linkpkg -o ml_example_with_pkg ml_example.ml
+    - name: Run ml_example_with_pkg (native)
+      run: ./ml_example
