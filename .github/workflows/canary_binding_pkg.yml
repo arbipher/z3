@@ -74,6 +74,8 @@ jobs:
         ocaml-version:
         - "5"
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v6.0.1
     - uses: ./.github/actions/canary-test-setup
       with:
         ocaml-version: ${{ matrix.ocaml-version }}
