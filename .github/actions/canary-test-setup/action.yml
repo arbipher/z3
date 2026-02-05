@@ -1,0 +1,58 @@
+name: "canary test setup"
+description: "Shared setup: checkout, restore caches, install OCaml/opam, system deps, base opam deps"
+inputs:
+  ocaml-version:
+    description: "OCaml compiler version for setup-ocaml"
+    required: true
+  opam-packages:
+    description: "Base opam packages to install"
+    required: false
+    default: "ocamlfind zarith"
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    # ccache cache (optional but useful)
+    - name: Cache ccache
+      uses: actions/cache@v5
+      with:
+        path: ~/.ccache
+        key: ${{ runner.os }}-ccache-
+        restore-keys: |
+          ${{ runner.os }}-ccache-
+
+    # opam cache
+    - name: Cache opam root
+      uses: actions/cache@v5
+      with:
+        path: ~/.opam
+        key: ${{ runner.os }}-opam-${{ inputs.ocaml-version }}-
+        restore-keys: |
+          ${{ runner.os }}-opam-${{ inputs.ocaml-version }}-
+
+    - uses: ocaml/setup-ocaml@v3
+      with:
+        ocaml-compiler: ${{ inputs.ocaml-version }}
+        opam-disable-sandboxing: true
+
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          bubblewrap m4 libgmp-dev pkg-config ninja-build ccache
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install gmp pkg-config ninja ccache
+
+    - name: Install required opam packages
+      shell: bash
+      run: |
+        eval "$(opam env)"
+        opam install -y ${{ inputs.opam-packages }}
