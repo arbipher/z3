@@ -19,7 +19,7 @@ jobs:
         ocaml-version:
         - "5"
     steps:
-    - uses: ./.github/actions/ocaml-setup
+    - uses: ./.github/actions/canary-test-setup
       with:
         ocaml-version: ${{ matrix.ocaml-version }}
     - name: Configure with CMake
@@ -74,7 +74,7 @@ jobs:
         ocaml-version:
         - "5"
     steps:
-    - uses: ./.github/actions/ocaml-setup
+    - uses: ./.github/actions/canary-test-setup
       with:
         ocaml-version: ${{ matrix.ocaml-version }}
     - name: Install package
