@@ -84,9 +84,8 @@ jobs:
     - name: Install package
       run: |
         eval $(opam env)
-        opam repo add my-opam-fork https://github.com/arbipher/opam-repository.git
-        opam update
-        opam install z3.dev --verbose
+        opam repo add my-opam-fork "git+https://github.com/arbipher/opam-repository.git#add-z3-dev"
+        opam install -y z3.dev --verbose
     - name: Compile ml_example_with_pkg.byte
       run: |
         eval $(opam env)
