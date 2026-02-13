@@ -7,19 +7,26 @@ set(bc_ext ".byte")
 set(z3ml_src ${CMAKE_CURRENT_SOURCE_DIR})
 set(z3ml_bin ${CMAKE_CURRENT_BINARY_DIR})
 
-if (Z3_EXTERNAL_LIBZ3)
-  add_custom_target(libz3_ocaml
-    ALL
-    DEPENDS ${Z3_EXTERNAL_LIBZ3}/libz3${so_ext}
-  )
-  set(libz3_path ${Z3_EXTERNAL_LIBZ3})
-else()
-  add_custom_target(libz3_ocaml
-    ALL
-    DEPENDS libz3
-  )
-  set(libz3_path ${PROJECT_BINARY_DIR})
-endif()
+# if (Z3_ROOT)
+#   add_custom_target(libz3_ocaml
+#     ALL
+#     DEPENDS ${Z3_ROOT}/libz3${so_ext}
+#   )
+#   set(libz3_path ${Z3_ROOT})
+# else()
+#   add_custom_target(libz3_ocaml
+#     ALL
+#     DEPENDS libz3
+#   )
+#   set(libz3_path ${PROJECT_BINARY_DIR})
+# endif()
+
+add_custom_target(libz3_ocaml
+  ALL
+  DEPENDS libz3
+)
+set(libz3_file  ${Z3_LIBRARY})
+get_filename_component(libz3_dir "${libz3_file}" DIRECTORY)
 
 add_custom_command(
   OUTPUT
@@ -152,7 +159,7 @@ execute_process(
 
 set(ocaml_stublibs_path "${ocaml_destdir_path}/stublibs")
 
-set(c_lib_deps "-L${libz3_path}" "-lz3" "-lstdc++" "-lpthread")
+set(c_lib_deps "-L${libz3_dir}" "-lz3" "-lstdc++" "-lpthread")
 if (Z3_USE_LIB_GMP)
   list(APPEND c_lib_deps "-lgmp")
 endif()
@@ -171,7 +178,7 @@ set(ocamlmklib_flags "-o" "z3ml"
                      "-ocamlcflags" "-bin-annot"
                      "-package" "zarith"
                      ${c_lib_deps}
-                     "-dllpath" "${libz3_path}"
+                     "-dllpath" "${libz3_dir}"
                      "-L${ocaml_stublibs_path}"
                      "-dllpath" "${ocaml_stublibs_path}"
                      "-dllpath" "@rpath/dllz3ml.so"
@@ -255,7 +262,7 @@ set(z3ml_example_src ${PROJECT_SOURCE_DIR}/examples/ml/ml_example.ml)
 add_custom_command(
   TARGET build_z3_ocaml_bindings POST_BUILD
   COMMAND "${OCAMLFIND}" ocamlc
-    -cclib "${libz3_path}/libz3${so_ext}"
+    -cclib "${libz3_path}"
     -o "${z3ml_bin}/ml_example.byte"
     -package zarith
     -linkpkg
@@ -271,7 +278,7 @@ add_custom_command(
 add_custom_command(
   TARGET build_z3_ocaml_bindings POST_BUILD
   COMMAND "${OCAMLFIND}" ocamlopt
-    -cclib "${libz3_path}/libz3${so_ext}"
+    -cclib "${libz3_path}"
     -o "${z3ml_bin}/ml_example"
     -package zarith
     -linkpkg

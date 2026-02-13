@@ -579,43 +579,49 @@ endforeach()
 ################################################################################
 include(CMakePackageConfigHelpers)
 
-set(Z3_EXTERNAL_LIBZ3 '' CACHE PATH "Directory hint for locating a prebuilt libz3")
+################################################################################
+# Z3 components, library and executables
+################################################################################
+include(${PROJECT_SOURCE_DIR}/cmake/z3_add_component.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/z3_append_linker_flag_list_to_target.cmake)
+
+set(Z3_ROOT '' CACHE PATH "Prefix directory for a prebuilt libz3")
 option(Z3_BUILD_LIBZ3_CORE "Build the core libz3 library" ON)
 # Only export targets if we built libz3
 if (Z3_BUILD_LIBZ3_CORE)
-  ################################################################################
-  # Z3 components, library and executables
-  ################################################################################
-  include(${PROJECT_SOURCE_DIR}/cmake/z3_add_component.cmake)
-  include(${PROJECT_SOURCE_DIR}/cmake/z3_append_linker_flag_list_to_target.cmake)
-  add_subdirectory(src)
-
-  export(EXPORT Z3_EXPORTED_TARGETS
-     NAMESPACE z3::
-     FILE "${PROJECT_BINARY_DIR}/Z3Targets.cmake"
-  )
-
   set(Z3_LIBRARY "$<TARGET_FILE:libz3>")
   set(LIBZ3_DEPENDS libz3)
 else()
-  # When not building libz3, we need to find it
   message(STATUS "Not building libz3, will look for pre-installed library")
 
-  if (Z3_EXTERNAL_LIBZ3)
+  if (Z3_ROOT)
     find_library(Z3_LIBRARY NAMES z3 libz3
-      HINTS ${Z3_EXTERNAL_LIBZ3}
-      PATH_SUFFIXES lib lib64
+      HINTS ${Z3_ROOT}
+      PATH_SUFFIXES lib lib64 lib/${CMAKE_LIBRARY_ARCHITECTURE}
+      NO_DEFAULT_PATH
+    )
+    find_path(Z3_INCLUDE_DIR NAMES z3.h
+      HINTS ${Z3_ROOT}
+      PATH_SUFFIXES include
       NO_DEFAULT_PATH
     )
   else()
+    # TODO: confirm we can remove the "default" HINTS suggestd by some AI
+      # HINTS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
+      # HINTS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}"
     find_library(Z3_LIBRARY NAMES z3 libz3
-      HINTS ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
-      PATH_SUFFIXES lib lib64
+      PATH_SUFFIXES lib lib64 lib/${CMAKE_LIBRARY_ARCHITECTURE}
+    )
+    find_path(Z3_INCLUDE_DIR NAMES z3.h
+      PATH_SUFFIXES include
     )
   endif()
 
   if (NOT Z3_LIBRARY)
     message(FATAL_ERROR "Could not find pre-installed libz3. Please ensure libz3 is installed or set Z3_BUILD_LIBZ3_CORE=ON")
+  endif()
+  if (NOT Z3_INCLUDE_DIR)
+    message(FATAL_ERROR "Could not find z3.h for the pre-installed libz3")
   endif()
   message(STATUS "Found libz3: ${Z3_LIBRARY}")
 
@@ -624,32 +630,13 @@ else()
   set_target_properties(libz3 PROPERTIES
     IMPORTED_LOCATION "${Z3_LIBRARY}"
   )
-  set(LIBZ3_DEPENDS "")
+  set(LIBZ3_DEPENDS)
 
   # Set include directories for the imported target
-  target_include_directories(libz3 INTERFACE
-    ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-  )
+  target_include_directories(libz3 INTERFACE "${Z3_INCLUDE_DIR}")
 endif()
 
-################################################################################
-# Z3 API bindings
-################################################################################
-option(Z3_BUILD_PYTHON_BINDINGS "Build Python bindings for Z3" OFF)
-if (Z3_BUILD_PYTHON_BINDINGS)
-  # Validate configuration for Python bindings
-  if (Z3_BUILD_LIBZ3_CORE)
-    # Building libz3 together with Python bindings
-    if (NOT Z3_BUILD_LIBZ3_SHARED)
-      message(FATAL_ERROR "The python bindings will not work with a static libz3. "
-              "You either need to disable Z3_BUILD_PYTHON_BINDINGS or enable Z3_BUILD_LIBZ3_SHARED")
-    endif()
-  else()
-    # Using pre-installed libz3 for Python bindings
-    message(STATUS "Building Python bindings with pre-installed libz3")
-  endif()
-  add_subdirectory(src/api/python)
-endif()
+add_subdirectory(src)
 
 set(Z3_FIRST_PACKAGE_INCLUDE_DIR "${PROJECT_BINARY_DIR}/src/api")
 set(Z3_SECOND_PACKAGE_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/api")
