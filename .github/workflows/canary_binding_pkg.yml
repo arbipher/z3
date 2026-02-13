@@ -28,11 +28,10 @@ jobs:
       env:
         CC: ${{ matrix.os == 'macos-latest' && 'ccache clang' || 'ccache gcc' }}
         CXX: ${{ matrix.os == 'macos-latest' && 'ccache clang++' || 'ccache g++' }}
-      run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n  -G Ninja \\\n
-        \  \\\n  -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n
-        \ -DZ3_BUILD_JAVA_BINDINGS=OFF \\\n  -DZ3_BUILD_PYTHON_BINDINGS=OFF \\\n  -DZ3_BUILD_EXECUTABLE=OFF
-        \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE
-        \n"
+      run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n   -G Ninja \\\n
+        \ -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
+        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF\n\\\n
+        \ -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n   \n"
     - name: Build Z3 and OCaml bindings
       run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings \n"
     - name: Compile ml_example.byte
@@ -102,3 +101,42 @@ jobs:
           examples/ml/ml_example.ml
     - name: Run ml_example_with_pkg (native)
       run: ./ml_example_with_pkg
+  download-and-test:
+    name: download-and-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu-latest
+        ocaml-version:
+        - "5"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+    - uses: ./.github/actions/canary-test-setup
+      with:
+        ocaml-version: ${{ matrix.ocaml-version }}
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get install -y libz3-dev
+        pkg-config --variable=libdir z3
+        echo "Z3_PREFIX=$(pkg-config --variable=libdir z3)" >> "$GITHUB_ENV"
+        echo "Detected Z3_PREFIX=${Z3_PREFIX}"
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install z3
+        brew --prefix z3
+        echo "Z3_PREFIX=$(brew --prefix z3)" >> "$GITHUB_ENV"
+        echo "Detected Z3_PREFIX=${Z3_PREFIX}"
+    - name: Configure with CMake
+      run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n   -G Ninja \\\n
+        \ -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
+        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF\n\n\t-DZ3_BUILD_LIBZ3_CORE=OFF
+        \\\n  -DZ3_EXTERNAL_LIBZ3=/home/ex/code/ocaml-build-examples/vendor/z3/.helper/libz3
+        \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n
+        \ \n"
