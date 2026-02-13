@@ -10,7 +10,7 @@ jobs:
   build-and-test:
     name: build-and-test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    strategy:
+    strategy: &strategy_vars
       fail-fast: false
       matrix:
         os:
@@ -30,10 +30,11 @@ jobs:
         CXX: ${{ matrix.os == 'macos-latest' && 'ccache clang++' || 'ccache g++' }}
       run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n   -G Ninja \\\n
         \ -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
-        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF\n\\\n
+        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF  \\\n
         \ -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n   \n"
-    - name: Build Z3 and OCaml bindings
-      run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings \n"
+    - name: Build Z3 and OCaml binding
+      run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings\n  ninja
+        build build_z3_python_bindings\n  \n"
     - name: Compile ml_example.byte
       run: |
         eval $(opam env)
@@ -66,14 +67,7 @@ jobs:
   packaging:
     name: packaging (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-        - ubuntu-latest
-        - macos-latest
-        ocaml-version:
-        - "5"
+    strategy: *strategy_vars
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -104,13 +98,7 @@ jobs:
   download-and-test:
     name: download-and-test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-        - ubuntu-latest
-        ocaml-version:
-        - "5"
+    strategy: *strategy_vars
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -136,7 +124,14 @@ jobs:
     - name: Configure with CMake
       run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n   -G Ninja \\\n
         \ -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
-        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF\n\n\t-DZ3_BUILD_LIBZ3_CORE=OFF
+        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF  \\\n\t-DZ3_BUILD_LIBZ3_CORE=OFF
         \\\n  -DZ3_EXTERNAL_LIBZ3=/home/ex/code/ocaml-build-examples/vendor/z3/.helper/libz3
         \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n
         \ \n"
+    - name: Build OCaml and Python bindings
+      run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings\n  ninja
+        build build_z3_python_bindings\n  \n"
+    - name: Run Python bindings
+      run: |
+        PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
+          PYTHONPATH="build/python" python3 -S examples/python/example.py
