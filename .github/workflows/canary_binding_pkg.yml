@@ -125,9 +125,8 @@ jobs:
       run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n   -G Ninja \\\n
         \ -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
         \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF  \\\n\t-DZ3_BUILD_LIBZ3_CORE=OFF
-        \\\n  -DZ3_EXTERNAL_LIBZ3=/home/ex/code/ocaml-build-examples/vendor/z3/.helper/libz3
-        \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n
-        \ \n"
+        \\\n  -DZ3_EXTERNAL_LIBZ3=${Z3_PREFIX} \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON
+        \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n  \n"
     - name: Build OCaml and Python bindings
       run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings\n  ninja
         build build_z3_python_bindings\n  \n"
