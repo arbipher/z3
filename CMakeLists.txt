@@ -579,6 +579,7 @@ endforeach()
 ################################################################################
 include(CMakePackageConfigHelpers)
 
+set(Z3_EXTERNAL_LIBZ3 '' CACHE PATH "Directory hint for locating a prebuilt libz3")
 option(Z3_BUILD_LIBZ3_CORE "Build the core libz3 library" ON)
 # Only export targets if we built libz3
 if (Z3_BUILD_LIBZ3_CORE)
@@ -593,13 +594,26 @@ if (Z3_BUILD_LIBZ3_CORE)
      NAMESPACE z3::
      FILE "${PROJECT_BINARY_DIR}/Z3Targets.cmake"
   )
+
+  set(Z3_LIBRARY "$<TARGET_FILE:libz3>")
+  set(LIBZ3_DEPENDS libz3)
 else()
   # When not building libz3, we need to find it
   message(STATUS "Not building libz3, will look for pre-installed library")
-  find_library(Z3_LIBRARY NAMES z3 libz3
-    HINTS ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
-    PATH_SUFFIXES lib lib64
-  )
+
+  if (Z3_EXTERNAL_LIBZ3)
+    find_library(Z3_LIBRARY NAMES z3 libz3
+      HINTS ${Z3_EXTERNAL_LIBZ3}
+      PATH_SUFFIXES lib lib64
+      NO_DEFAULT_PATH
+    )
+  else()
+    find_library(Z3_LIBRARY NAMES z3 libz3
+      HINTS ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+      PATH_SUFFIXES lib lib64
+    )
+  endif()
+
   if (NOT Z3_LIBRARY)
     message(FATAL_ERROR "Could not find pre-installed libz3. Please ensure libz3 is installed or set Z3_BUILD_LIBZ3_CORE=ON")
   endif()
@@ -610,6 +624,8 @@ else()
   set_target_properties(libz3 PROPERTIES
     IMPORTED_LOCATION "${Z3_LIBRARY}"
   )
+  set(LIBZ3_DEPENDS "")
+
   # Set include directories for the imported target
   target_include_directories(libz3 INTERFACE
     ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
