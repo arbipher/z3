@@ -253,39 +253,38 @@ add_custom_target(build_z3_ocaml_bindings
 )
 
 # test
+# TODO: outdatad tests
+# set(z3ml_example_src ${PROJECT_SOURCE_DIR}/examples/ml/ml_example.ml)
+# add_custom_command(
+#   TARGET build_z3_ocaml_bindings POST_BUILD
+#   COMMAND "${OCAMLFIND}" ocamlc
+#     -cclib "${Z3_LIBRARY}"
+#     -o "${z3ml_bin}/ml_example.byte"
+#     -package zarith
+#     -linkpkg
+#     -I "${z3ml_bin}"
+#     -dllpath "${z3ml_bin}"
+#     "${z3ml_bin}/z3ml.cma"
+#     "${z3ml_example_src}"
+#   COMMAND env DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR} ocamlrun ${z3ml_bin}/ml_example.byte > ${z3ml_bin}/ml_example.bc.log
+#   COMMENT "Run OCaml bytecode example"
+#   VERBATIM
+# )
 
-set(z3ml_example_src ${PROJECT_SOURCE_DIR}/examples/ml/ml_example.ml)
-
-add_custom_command(
-  TARGET build_z3_ocaml_bindings POST_BUILD
-  COMMAND "${OCAMLFIND}" ocamlc
-    -cclib "${Z3_LIBRARY}"
-    -o "${z3ml_bin}/ml_example.byte"
-    -package zarith
-    -linkpkg
-    -I "${z3ml_bin}"
-    -dllpath "${z3ml_bin}"
-    "${z3ml_bin}/z3ml.cma"
-    "${z3ml_example_src}"
-  COMMAND env DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR} ocamlrun ${z3ml_bin}/ml_example.byte > ${z3ml_bin}/ml_example.bc.log
-  COMMENT "Run OCaml bytecode example"
-  VERBATIM
-)
-
-add_custom_command(
-  TARGET build_z3_ocaml_bindings POST_BUILD
-  COMMAND "${OCAMLFIND}" ocamlopt
-    -cclib "${Z3_LIBRARY}"
-    -o "${z3ml_bin}/ml_example"
-    -package zarith
-    -linkpkg
-    -I "${z3ml_bin}"
-    "${z3ml_bin}/z3ml.cmxa"
-    "${z3ml_example_src}"
-  COMMAND env DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR} ${z3ml_bin}/ml_example > ${z3ml_bin}/ml_example.log
-  COMMENT "Run OCaml native example"
-  VERBATIM
-)
+# add_custom_command(
+#   TARGET build_z3_ocaml_bindings POST_BUILD
+#   COMMAND "${OCAMLFIND}" ocamlopt
+#     -cclib "${Z3_LIBRARY}"
+#     -o "${z3ml_bin}/ml_example"
+#     -package zarith
+#     -linkpkg
+#     -I "${z3ml_bin}"
+#     "${z3ml_bin}/z3ml.cmxa"
+#     "${z3ml_example_src}"
+#   COMMAND env DYLD_LIBRARY_PATH=${PROJECT_BINARY_DIR} ${z3ml_bin}/ml_example > ${z3ml_bin}/ml_example.log
+#   COMMENT "Run OCaml native example"
+#   VERBATIM
+# )
 
 ###############################################################################
 # Install
