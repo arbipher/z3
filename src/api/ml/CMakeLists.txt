@@ -12,21 +12,18 @@ set(z3ml_bin ${CMAKE_CURRENT_BINARY_DIR})
 #     ALL
 #     DEPENDS ${Z3_ROOT}/libz3${so_ext}
 #   )
-#   set(libz3_path ${Z3_ROOT})
 # else()
 #   add_custom_target(libz3_ocaml
 #     ALL
 #     DEPENDS libz3
 #   )
-#   set(libz3_path ${PROJECT_BINARY_DIR})
 # endif()
+# add_custom_target(libz3_ocaml
+#   ALL
+#   DEPENDS libz3
+# )
 
-add_custom_target(libz3_ocaml
-  ALL
-  DEPENDS libz3
-)
-set(libz3_file  ${Z3_LIBRARY})
-get_filename_component(libz3_dir "${libz3_file}" DIRECTORY)
+get_filename_component(libz3_dir "${Z3_LIBRARY}" DIRECTORY)
 
 add_custom_command(
   OUTPUT
@@ -207,7 +204,7 @@ add_custom_command(
           "-I" "${z3ml_bin}"
           "${z3ml_bin}/z3ml.cmxa"
   DEPENDS
-          libz3_ocaml
+          LIBZ3_DEPENDS
           ${z3ml_bin}/z3native_stubs.o
           ${z3ml_bin}/z3enums.cmo
           ${z3ml_bin}/z3native.cmo
@@ -262,7 +259,7 @@ set(z3ml_example_src ${PROJECT_SOURCE_DIR}/examples/ml/ml_example.ml)
 add_custom_command(
   TARGET build_z3_ocaml_bindings POST_BUILD
   COMMAND "${OCAMLFIND}" ocamlc
-    -cclib "${libz3_path}"
+    -cclib "${libz3_dir}"
     -o "${z3ml_bin}/ml_example.byte"
     -package zarith
     -linkpkg
@@ -278,7 +275,7 @@ add_custom_command(
 add_custom_command(
   TARGET build_z3_ocaml_bindings POST_BUILD
   COMMAND "${OCAMLFIND}" ocamlopt
-    -cclib "${libz3_path}"
+    -cclib "${libz3_dir}"
     -o "${z3ml_bin}/ml_example"
     -package zarith
     -linkpkg

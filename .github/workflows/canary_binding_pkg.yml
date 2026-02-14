@@ -110,8 +110,8 @@ jobs:
       shell: bash
       run: |
         sudo apt-get install -y libz3-dev
-        pkg-config --variable=libdir z3
-        echo "Z3_PREFIX=$(pkg-config --variable=libdir z3)" >> "$GITHUB_ENV"
+        pkg-config --variable=prefix z3
+        echo "Z3_PREFIX=$(pkg-config --variable=prefix z3)" >> "$GITHUB_ENV"
         echo "Detected Z3_PREFIX=${Z3_PREFIX}"
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
