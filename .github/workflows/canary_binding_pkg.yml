@@ -33,8 +33,8 @@ jobs:
         \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF  \\\n
         \ -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n   \n"
     - name: Build Z3 and OCaml binding
-      run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings\n  ninja
-        build build_z3_python_bindings\n  \n"
+      run: "eval $(opam env)\n  cd build\n  ninja -C build build_z3_ocaml_bindings\n
+        \ ninja -C build build_z3_python_bindings\n  \n"
     - name: Compile ml_example.byte
       run: |
         eval $(opam env)
@@ -128,8 +128,8 @@ jobs:
         \\\n  -DZ3_ROOT=${Z3_PREFIX} \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON
         \\\n  \n"
     - name: Build OCaml and Python bindings
-      run: "eval $(opam env)\n  cd build\n  ninja build_z3_ocaml_bindings\n  ninja
-        build build_z3_python_bindings\n  \n"
+      run: "eval $(opam env)\n  cd build\n  ninja -C build build_z3_ocaml_bindings\n
+        \ ninja -C build build_z3_python_bindings\n  \n"
     - name: Run Python bindings
       run: |
         PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
