@@ -595,7 +595,7 @@ else()
   message(STATUS "Not building libz3, will look for pre-installed library")
 
   if (Z3_ROOT)
-    find_library(Z3_LIBRARY_DIR NAMES z3 libz3
+    find_library(Z3_LIBRARY NAMES z3 libz3
       HINTS ${Z3_ROOT}
       PATH_SUFFIXES lib lib64 lib/${CMAKE_LIBRARY_ARCHITECTURE}
       NO_DEFAULT_PATH
@@ -609,7 +609,7 @@ else()
     # TODO: confirm we can remove the "default" HINTS suggestd by some AI
       # HINTS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
       # HINTS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}"
-    find_library(Z3_LIBRARY_DIR NAMES z3 libz3
+    find_library(Z3_LIBRARY NAMES z3 libz3
       PATH_SUFFIXES lib lib64 lib/${CMAKE_LIBRARY_ARCHITECTURE}
     )
     find_path(Z3_INCLUDE_DIR NAMES z3.h
@@ -620,15 +620,18 @@ else()
   if (NOT Z3_LIBRARY_DIR)
     message(FATAL_ERROR "Could not find pre-installed libz3. Please ensure libz3 is installed or set Z3_BUILD_LIBZ3_CORE=ON")
   endif()
+  get_filename_component(Z3_LIBRARY_DIR "${Z3_LIBRARY}" DIRECTORY)
+
   if (NOT Z3_INCLUDE_DIR)
     message(FATAL_ERROR "Could not find z3.h for the pre-installed libz3")
   endif()
-  message(STATUS "Found libz3: ${Z3_LIBRARY_DIR}")
+  message(STATUS "Found libz3: ${Z3_LIBRARY}")
+  message(STATUS "Found libz3 path: ${Z3_LIBRARY_DIR}")
 
   # Create an imported target for the pre-installed libz3
   add_library(libz3 SHARED IMPORTED)
   set_target_properties(libz3 PROPERTIES
-    IMPORTED_LOCATION "${Z3_LIBRARY_DIR}"
+    IMPORTED_LOCATION "${Z3_LIBRARY}"
   )
   set(LIBZ3_DEPENDS)
 
