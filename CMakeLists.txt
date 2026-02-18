@@ -586,6 +586,12 @@ include(${PROJECT_SOURCE_DIR}/cmake/z3_add_component.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/z3_append_linker_flag_list_to_target.cmake)
 
 set(Z3_ROOT '' CACHE PATH "Prefix directory for a prebuilt libz3")
+
+message(STATUS "Z3_ROOT='${Z3_ROOT}'")
+message(STATUS "CMAKE_LIBRARY_ARCHITECTURE='${CMAKE_LIBRARY_ARCHITECTURE}'")
+message(STATUS "CMAKE_SYSTEM_PREFIX_PATH='${CMAKE_SYSTEM_PREFIX_PATH}'")
+message(STATUS "CMAKE_PREFIX_PATH='${CMAKE_PREFIX_PATH}'")
+
 option(Z3_BUILD_LIBZ3_CORE "Build the core libz3 library" ON)
 # Only export targets if we built libz3
 if (Z3_BUILD_LIBZ3_CORE)
@@ -617,7 +623,7 @@ else()
     )
   endif()
 
-  if (NOT Z3_LIBRARY_DIR)
+  if (NOT Z3_LIBRARY)
     message(FATAL_ERROR "Could not find pre-installed libz3. Please ensure libz3 is installed or set Z3_BUILD_LIBZ3_CORE=ON")
   endif()
   get_filename_component(Z3_LIBRARY_DIR "${Z3_LIBRARY}" DIRECTORY)
