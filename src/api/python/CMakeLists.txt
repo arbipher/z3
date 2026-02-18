@@ -74,7 +74,7 @@ endif()
 if (TARGET libz3)
   add_custom_command(OUTPUT "${z3py_bindings_build_dest}/libz3${CMAKE_SHARED_MODULE_SUFFIX}"
     COMMAND "${CMAKE_COMMAND}" "-E" "${LINK_COMMAND}"
-      "${Z3_LIBRARY}"
+      "${Z3_LIBRARY_DIR}"
       "${z3py_bindings_build_dest}/libz3${CMAKE_SHARED_MODULE_SUFFIX}"
     DEPENDS ${LIBZ3_DEPENDS}
     COMMENT "Linking libz3 into python directory"

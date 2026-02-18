@@ -23,7 +23,6 @@ set(z3ml_bin ${CMAKE_CURRENT_BINARY_DIR})
 #   DEPENDS libz3
 # )
 
-get_filename_component(libz3_dir "${Z3_LIBRARY}" DIRECTORY)
 
 add_custom_command(
   OUTPUT
@@ -155,8 +154,8 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 set(ocaml_stublibs_path "${ocaml_destdir_path}/stublibs")
+set(c_lib_deps "-L${Z3_LIBRARY_DIR}" "-lz3" "-lstdc++" "-lpthread")
 
-set(c_lib_deps "-L${libz3_dir}" "-lz3" "-lstdc++" "-lpthread")
 if (Z3_USE_LIB_GMP)
   list(APPEND c_lib_deps "-lgmp")
 endif()
@@ -170,12 +169,14 @@ endif()
 
 # We may not directly use CMake's BUILD_RPATH or INSTALL_RPATH since they don't set 
 # the ocaml stub libraries as a normal library target.
+message(STATUS "c_lib_deps: ${c_lib_deps}")
+message(STATUS "ocamlmklib_flags: ${ocamlmklib_flags}")
 
 set(ocamlmklib_flags "-o" "z3ml"
                      "-ocamlcflags" "-bin-annot"
                      "-package" "zarith"
                      ${c_lib_deps}
-                     "-dllpath" "${libz3_dir}"
+                     "-dllpath" "${Z3_LIBRARY_DIR}"
                      "-L${ocaml_stublibs_path}"
                      "-dllpath" "${ocaml_stublibs_path}"
                      "-dllpath" "@rpath/dllz3ml.so"
@@ -258,7 +259,7 @@ add_custom_target(build_z3_ocaml_bindings
 # add_custom_command(
 #   TARGET build_z3_ocaml_bindings POST_BUILD
 #   COMMAND "${OCAMLFIND}" ocamlc
-#     -cclib "${Z3_LIBRARY}"
+#     -cclib "${Z3_LIBRARY_DIR}"
 #     -o "${z3ml_bin}/ml_example.byte"
 #     -package zarith
 #     -linkpkg
@@ -274,7 +275,7 @@ add_custom_target(build_z3_ocaml_bindings
 # add_custom_command(
 #   TARGET build_z3_ocaml_bindings POST_BUILD
 #   COMMAND "${OCAMLFIND}" ocamlopt
-#     -cclib "${Z3_LIBRARY}"
+#     -cclib "${Z3_LIBRARY_DIR}"
 #     -o "${z3ml_bin}/ml_example"
 #     -package zarith
 #     -linkpkg
