@@ -593,9 +593,11 @@ message(STATUS "CMAKE_SYSTEM_PREFIX_PATH='${CMAKE_SYSTEM_PREFIX_PATH}'")
 message(STATUS "CMAKE_PREFIX_PATH='${CMAKE_PREFIX_PATH}'")
 
 option(Z3_BUILD_LIBZ3_CORE "Build the core libz3 library" ON)
-# Only export targets if we built libz3
 if (Z3_BUILD_LIBZ3_CORE)
   set(Z3_LIBRARY_DIR "${PROJECT_BINARY_DIR}")
+  # TODO: we should use target names
+  # set(Z3_LIBRARY "$<TARGET_FILE:libz3>")
+  set(Z3_LIBRARY "${PROJECT_BINARY_DIR}/libz3${CMAKE_SHARED_LIBRARY_SUFFIX}")
   set(LIBZ3_DEPENDS libz3)
 else()
   message(STATUS "Not building libz3, will look for pre-installed library")

@@ -275,6 +275,7 @@ if (Z3_BUILD_LIBZ3_CORE)
     z3_append_linker_flag_list_to_target(libz3 "/DEF:${dll_module_exports_file}")
   endif()
 
+  # Only export targets if we built libz3
   export(EXPORT Z3_EXPORTED_TARGETS
      NAMESPACE z3::
      FILE "${PROJECT_BINARY_DIR}/Z3Targets.cmake"
