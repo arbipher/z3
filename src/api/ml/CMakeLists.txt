@@ -169,9 +169,6 @@ endif()
 
 # We may not directly use CMake's BUILD_RPATH or INSTALL_RPATH since they don't set 
 # the ocaml stub libraries as a normal library target.
-message(STATUS "c_lib_deps: ${c_lib_deps}")
-message(STATUS "ocamlmklib_flags: ${ocamlmklib_flags}")
-
 set(ocamlmklib_flags "-o" "z3ml"
                      "-ocamlcflags" "-bin-annot"
                      "-package" "zarith"
@@ -181,6 +178,9 @@ set(ocamlmklib_flags "-o" "z3ml"
                      "-dllpath" "${ocaml_stublibs_path}"
                      "-dllpath" "@rpath/dllz3ml.so"
                      "-I" "${z3ml_bin}")
+
+message(STATUS "c_lib_deps: ${c_lib_deps}")
+message(STATUS "ocamlmklib_flags: ${ocamlmklib_flags}")
 
 # OCaml's dll stublib hava platform-independent name `dll<pkg>.so`
 

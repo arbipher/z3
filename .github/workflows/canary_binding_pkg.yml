@@ -1,11 +1,11 @@
 name: Canary Testing for Bindings and Packages
+
 on:
   push:
-    branches:
-    - "**"
+    branches: ["**"]
   pull_request:
-    branches:
-    - "**"
+    branches: ["**"]
+
 jobs:
   build-and-test:
     name: build-and-test (${{ matrix.os }})
@@ -13,124 +13,191 @@ jobs:
     strategy: &strategy_vars
       fail-fast: false
       matrix:
-        os:
-        - ubuntu-latest
-        - macos-latest
-        ocaml-version:
-        - "5"
+        os: [ubuntu-latest, macos-latest]
+        ocaml-version: ["5"]
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-    - uses: ./.github/actions/canary-test-setup
-      with:
-        ocaml-version: ${{ matrix.ocaml-version }}
-    - name: Configure with CMake
-      env:
-        CC: ${{ matrix.os == 'macos-latest' && 'ccache clang' || 'ccache gcc' }}
-        CXX: ${{ matrix.os == 'macos-latest' && 'ccache clang++' || 'ccache g++' }}
-      run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n   -G Ninja \\\n
-        \ -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
-        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF  \\\n
-        \ -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON \\\n   \n"
-    - name: Build Z3 and OCaml binding
-      run: "eval $(opam env)\n  ninja -C build build_z3_ocaml_bindings\n  ninja -C
-        build build_z3_python_bindings\n  \n"
-    - name: Compile ml_example.byte
-      run: |
-        eval $(opam env)
-        ocamlfind ocamlc -o ml_example.byte \
-          -package zarith \
-          -linkpkg \
-          -I build/src/api/ml \
-          -dllpath build/src/api/ml \
-          build/src/api/ml/z3ml.cma \
-          examples/ml/ml_example.ml
-    - name: Run ml_example.byte
-      run: |
-        eval $(opam env)
-        # only macOS need this fix
-        export DYLD_LIBRARY_PATH=$(pwd)/build
-        ocamlrun ./ml_example.byte
-    - name: Compile ml_example (native)
-      run: |
-        eval $(opam env)
-        ocamlfind ocamlopt -o ml_example \
-          -package zarith \
-          -linkpkg \
-          -I build/src/api/ml \
-          build/src/api/ml/z3ml.cmxa \
-          examples/ml/ml_example.ml
-    - name: Run ml_example (native)
-      run: |
-        export DYLD_LIBRARY_PATH=$(pwd)/build
-        ./ml_example
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # miserable man's function
+      - uses: ./.github/actions/canary-test-setup
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
+      # Configure
+      - name: Configure with CMake
+        env:
+          CC: ${{ matrix.os == 'macos-latest' && 'ccache clang' || 'ccache gcc' }}
+          CXX: ${{ matrix.os == 'macos-latest' && 'ccache clang++' || 'ccache g++' }}
+        run: |
+          mkdir -p build
+          cd build
+          eval $(opam env)
+          cmake .. \
+             -G Ninja \
+            -DZ3_BUILD_LIBZ3_SHARED=ON \
+            -DZ3_BUILD_EXECUTABLE=OFF \
+            -DZ3_BUILD_TEST_EXECUTABLES=OFF \
+            -DCMAKE_VERBOSE_MAKEFILE=TRUE \
+            -DZ3_BUILD_JAVA_BINDINGS=OFF \
+            -DZ3_BUILD_OCAML_BINDINGS=ON \
+            -DZ3_BUILD_PYTHON_BINDINGS=ON \
+
+      - name: Build Z3 and OCaml binding
+        run: |
+          eval $(opam env)
+          ninja -C build build_z3_ocaml_bindings
+          ninja -C build build_z3_python_bindings
+
+      - name: Compile ml_example.byte
+        run: |
+          eval $(opam env)
+          ocamlfind ocamlc -o ml_example.byte \
+            -package zarith \
+            -linkpkg \
+            -I build/src/api/ml \
+            -dllpath build/src/api/ml \
+            build/src/api/ml/z3ml.cma \
+            examples/ml/ml_example.ml
+
+      - name: Run ml_example.byte
+        run: |
+          eval $(opam env)
+          # only macOS need this fix
+          export DYLD_LIBRARY_PATH=$(pwd)/build
+          ocamlrun ./ml_example.byte
+
+      - name: Compile ml_example (native)
+        run: |
+          eval $(opam env)
+          ocamlfind ocamlopt -o ml_example \
+            -package zarith \
+            -linkpkg \
+            -I build/src/api/ml \
+            -dllpath build/src/api/ml \
+            build/src/api/ml/z3ml.cmxa \
+            examples/ml/ml_example.ml
+
+      - name: Run ml_example (native)
+        run: |
+          export DYLD_LIBRARY_PATH=$(pwd)/build
+          ./ml_example
+
   packaging:
     name: packaging (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy: *strategy_vars
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-    - uses: ./.github/actions/canary-test-setup
-      with:
-        ocaml-version: ${{ matrix.ocaml-version }}
-    - name: Install package
-      run: |
-        eval $(opam env)
-        opam repo add my-opam-fork "git+https://github.com/arbipher/opam-repository.git#add-z3-dev"
-        opam install -y z3.dev --verbose
-    - name: Compile ml_example_with_pkg.byte
-      run: |
-        eval $(opam env)
-        ocamlfind ocamlc -package z3 -linkpkg -o ml_example_with_pkg.byte \
-          examples/ml/ml_example.ml
-    - name: Run ml_example_with_pkg.byte
-      run: |
-        eval $(opam env)
-        ocamlrun ./ml_example_with_pkg.byte
-    - name: Compile ml_example_with_pkg (native)
-      run: |
-        eval $(opam env)
-        ocamlfind ocamlopt -package z3 -linkpkg -o ml_example_with_pkg \
-          examples/ml/ml_example.ml
-    - name: Run ml_example_with_pkg (native)
-      run: ./ml_example_with_pkg
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/canary-test-setup
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
+      # This is for installing z3.dev inside the opam-repository fork
+      # - name: Install package
+      #   run: |
+      #     eval $(opam env)
+      #     opam repository remove local-repo --yes --all || true
+      #     opam repository add local-repo "file://$PWD" --rank=1
+      #     # opam install z3.dev
+      #     opam reinstall z3.dev --verbose
+
+      # This is a two-step tests, though we should test them separately
+      #   - package z3.dev works
+      #   - package z3.dev under opam works
+
+      - name: Install package
+        run: |
+          eval $(opam env)
+          opam repo add my-opam-fork "git+https://github.com/arbipher/opam-repository.git#add-z3-dev"
+          opam install -y z3.dev --verbose
+      # - name: Prepare test files
+      #   run: |
+      #     eval $(opam env)
+      #     SRC_DIR="$OPAM_SWITCH_PREFIX/.opam-switch/sources/z3.dev"
+      #     cp "$SRC_DIR/examples/ml/ml_example.ml" .
+
+      - name: Compile ml_example_with_pkg.byte
+        run: |
+          eval $(opam env)
+          ocamlfind ocamlc -o ml_example_with_pkg.byte \
+            -package z3 \
+            -linkpkg \
+            examples/ml/ml_example.ml
+
+      - name: Run ml_example_with_pkg.byte
+        run: |
+          eval $(opam env)
+          ocamlrun ./ml_example_with_pkg.byte
+
+      - name: Compile ml_example_with_pkg (native)
+        run: |
+          eval $(opam env)
+          ocamlfind ocamlopt -o ml_example_with_pkg \
+            -package z3 \
+            -linkpkg \
+            examples/ml/ml_example.ml
+
+      - name: Run ml_example_with_pkg (native)
+        run: ./ml_example_with_pkg
+
   download-and-test:
     name: download-and-test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy: *strategy_vars
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-    - uses: ./.github/actions/canary-test-setup
-      with:
-        ocaml-version: ${{ matrix.ocaml-version }}
-    - name: Install system dependencies (Linux)
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        sudo apt-get install -y libz3-dev
-        pkg-config --variable=prefix z3
-        echo "Z3_PREFIX=$(pkg-config --variable=prefix z3)" >> "$GITHUB_ENV"
-        echo "Detected Z3_PREFIX=${Z3_PREFIX}"
-    - name: Install system dependencies (macOS)
-      if: runner.os == 'macOS'
-      shell: bash
-      run: |
-        brew install z3
-        brew --prefix z3
-        echo "Z3_PREFIX=$(brew --prefix z3)" >> "$GITHUB_ENV"
-        echo "Detected Z3_PREFIX=${Z3_PREFIX}"
-    - name: Configure with CMake
-      run: "mkdir -p build\ncd build\neval $(opam env)\ncmake .. \\\n   -G Ninja \\\n
-        \ -DZ3_BUILD_LIBZ3_SHARED=ON \\\n  -DZ3_BUILD_EXECUTABLE=OFF \\\n  -DZ3_BUILD_TEST_EXECUTABLES=OFF
-        \\\n  -DCMAKE_VERBOSE_MAKEFILE=TRUE \\\n  -DZ3_BUILD_JAVA_BINDINGS=OFF  \\\n\t-DZ3_BUILD_LIBZ3_CORE=OFF
-        \\\n  -DZ3_ROOT=${Z3_PREFIX} \\\n  -DZ3_BUILD_OCAML_BINDINGS=ON \\\n  -DZ3_BUILD_PYTHON_BINDINGS=ON
-        \\\n  \n"
-    - name: Build OCaml and Python bindings
-      run: "eval $(opam env)\n  ninja -C build build_z3_ocaml_bindings\n  ninja -C
-        build build_z3_python_bindings\n  \n"
-    - name: Run Python bindings
-      run: |
-        PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/canary-test-setup
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt install -y z3
+          pkg-config --variable=prefix z3
+          echo "Z3_PREFIX=$(pkg-config --variable=prefix z3)" >> "$GITHUB_ENV"
+          echo "Detected Z3_PREFIX=$Z3_PREFIX"
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install z3
+          brew --prefix z3
+          echo "Z3_PREFIX=$(brew --prefix z3)" >> "$GITHUB_ENV"
+          echo "Detected Z3_PREFIX=$Z3_PREFIX"
+
+      - name: Configure with CMake
+        run: |
+          mkdir -p build
+          cd build
+          eval $(opam env)
+          cmake .. \
+             -G Ninja \
+            -DZ3_BUILD_LIBZ3_SHARED=ON \
+            -DZ3_BUILD_EXECUTABLE=OFF \
+            -DZ3_BUILD_TEST_EXECUTABLES=OFF \
+            -DCMAKE_VERBOSE_MAKEFILE=TRUE \
+            -DZ3_BUILD_JAVA_BINDINGS=OFF \
+          	-DZ3_BUILD_LIBZ3_CORE=OFF \
+            -DZ3_ROOT=${Z3_PREFIX} \
+            -DZ3_BUILD_OCAML_BINDINGS=ON \
+            -DZ3_BUILD_PYTHON_BINDINGS=ON
+
+      - name: Build OCaml and Python bindings
+        run: |
+          eval $(opam env)
+          ninja -C build build_z3_ocaml_bindings
+          ninja -C build build_z3_python_bindings
+
+      - name: Run Python bindings
+        run: |
+          PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
           PYTHONPATH="build/python" python3 -S examples/python/example.py
