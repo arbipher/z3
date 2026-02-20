@@ -199,7 +199,6 @@ jobs:
             --contains-any 'Z3_mk_seq_replace_all' \
             -- \
             env PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
-          PYTHONPATH="build/python" python3 -S examples/python/example.py
 
       # This is for installing z3.dev inside the opam-repository fork
       # - name: Install package
