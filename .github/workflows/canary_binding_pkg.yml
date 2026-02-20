@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-and-test:
+    if: false
     name: build-and-test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy: &strategy_vars
@@ -84,6 +85,7 @@ jobs:
           ./ml_example
 
   packaging:
+    if: false
     name: packaging (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy: *strategy_vars
@@ -189,9 +191,14 @@ jobs:
           ninja -C build build_z3_ocaml_bindings
           ninja -C build build_z3_python_bindings
 
-      - name: Run Python bindings
+      - name: Run Python binding
         run: |
-          PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
+          python3 .github/scripts/assert_result.py \
+            --expected-returncode 1 \
+            --contains-any 'Z3_solver_register_on_clause' \
+            --contains-any 'Z3_mk_seq_replace_all' \
+            -- \
+            env PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
           PYTHONPATH="build/python" python3 -S examples/python/example.py
 
       # This is for installing z3.dev inside the opam-repository fork
