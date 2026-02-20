@@ -20,15 +20,6 @@ runs:
         restore-keys: |
           ${{ runner.os }}-ccache-
 
-    # opam cache
-    - name: Cache opam root
-      uses: actions/cache@v5
-      with:
-        path: ~/.opam
-        key: ${{ runner.os }}-opam-${{ inputs.ocaml-version }}-
-        restore-keys: |
-          ${{ runner.os }}-opam-${{ inputs.ocaml-version }}-
-
     - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: ${{ inputs.ocaml-version }}
@@ -47,6 +38,9 @@ runs:
       shell: bash
       run: |
         brew install gmp pkg-config ninja ccache
+    # Warning: gmp 6.3.0 is already installed and up-to-date.
+    # Warning: pkgconf 2.5.1 is already installed and up-to-date
+    # Warning: ninja 1.13.2 is already installed and up-to-date.
 
     - name: Install required opam packages
       shell: bash
