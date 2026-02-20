@@ -100,10 +100,10 @@ jobs:
           eval $(opam env)
 
           Z3_OPAM_REPO_NAME='local-repo'
-          Z3_OPAM_REPO_URL='"git+https://github.com/arbipher/opam-repository.git#add-z3-dev"'
+          Z3_OPAM_REPO_URL='git+https://github.com/arbipher/opam-repository.git#add-z3-dev'
 
-          opam repo add $Z3_OPAM_REPO_NAME $Z3_OPAM_REPO_URL \
-            || opam repo set-url $Z3_OPAM_REPO_NAME $Z3_OPAM_REPO_URL
+          opam repo add "$Z3_OPAM_REPO_NAME" "$Z3_OPAM_REPO_URL" \
+            || opam repo set-url "$Z3_OPAM_REPO_NAME" "$Z3_OPAM_REPO_URL"
 
           # opam update
           opam remove -y z3.dev || true
