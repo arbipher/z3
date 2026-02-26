@@ -258,6 +258,7 @@ jobs:
       - name: Install z3.dev from contrib/canary local opam repo
         run: |
           eval $(opam env)
+          OPAMVAR_CANARY_Z3_SRC='git+file://$PWD' opam config subst contrib/canary/opam-local-repo/packages/z3/z3.dev/opam
           opam repo add local-z3-dev "file://$PWD/contrib/canary/opam-local-repo" --rank=1 || opam repo set-url local-z3-dev "file://$PWD/contrib/canary/opam-local-repo"
           opam update local-z3-dev
           opam remove -y z3.dev || true
