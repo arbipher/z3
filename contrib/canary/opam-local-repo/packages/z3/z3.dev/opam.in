@@ -34,7 +34,7 @@ install: [
     build/src/api/ml/*.o \
     build/src/api/ml/*.a \
     build/src/api/ml/META \
-    -dll \"$Z3_PREFIX\"/lib/libz3.* \
+    -dll \"${Z3_LIB_DIR:-$Z3_PREFIX/lib}\"/libz3.* \
     build/src/api/ml/dllz3ml.so"
      ]
   ["install_name_tool" "-id" "%{lib}%/stublibs/libz3.dylib" "%{lib}%/stublibs/libz3.dylib"] {os = "macos"}

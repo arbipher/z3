@@ -156,7 +156,9 @@ jobs:
           sudo apt install -y z3
           pkg-config --variable=prefix z3
           echo "Z3_PREFIX=$(pkg-config --variable=prefix z3)" >> "$GITHUB_ENV"
+          echo "Z3_LIB_DIR=$(pkg-config --variable=libdir z3)" >> "$GITHUB_ENV"
           echo "Detected Z3_PREFIX=$Z3_PREFIX"
+          echo "Detected Z3_LIB_DIR=$Z3_LIB_DIR"
 
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
@@ -165,7 +167,9 @@ jobs:
           brew install z3
           brew --prefix z3
           echo "Z3_PREFIX=$(brew --prefix z3)" >> "$GITHUB_ENV"
+          echo "Z3_LIB_DIR=$(echo "$(brew --prefix z3)/lib")" >> "$GITHUB_ENV"
           echo "Detected Z3_PREFIX=$Z3_PREFIX"
+          echo "Detected Z3_LIB_DIR=$Z3_LIB_DIR"
 
       - name: Configure with CMake
         run: |
@@ -231,7 +235,9 @@ jobs:
           sudo apt install -y z3
           pkg-config --variable=prefix z3
           echo "Z3_PREFIX=$(pkg-config --variable=prefix z3)" >> "$GITHUB_ENV"
+          echo "Z3_LIB_DIR=$(pkg-config --variable=libdir z3)" >> "$GITHUB_ENV"
           echo "Detected Z3_PREFIX=$Z3_PREFIX"
+          echo "Detected Z3_LIB_DIR=$Z3_LIB_DIR"
 
       - name: Configure with CMake (external libz3)
         run: |
