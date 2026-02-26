@@ -280,9 +280,13 @@ jobs:
 
       - name: Run ml_example_with_pkg.byte
         run: |
-          eval $(opam env)
+          python3 .github/scripts/assert_result.py \
+            --contains-any 'undefined symbol' \
+            --contains-any 'Z3_mk_u32string' \
+            -- \
+            sh -ec 'eval $(opam env)
           
-          ocamlrun ./ml_example_with_pkg.byte
+          ocamlrun ./ml_example_with_pkg.byte'
 
       - name: Compile ml_example_with_pkg (native)
         run: |
@@ -294,5 +298,9 @@ jobs:
 
       - name: Run ml_example_with_pkg (native)
         run: |
-          
-          ./ml_example_with_pkg
+          python3 .github/scripts/assert_result.py \
+            --contains-any 'undefined symbol' \
+            --contains-any 'Z3_mk_u32string' \
+            -- \
+            sh -ec '
+          ./ml_example_with_pkg'
