@@ -32,15 +32,14 @@ jobs:
           CC: ${{ matrix.os == 'macos-latest' && 'ccache clang' || 'ccache gcc' }}
           CXX: ${{ matrix.os == 'macos-latest' && 'ccache clang++' || 'ccache g++' }}
         run: |
-          mkdir -p build
-          cd build
           eval $(opam env)
           cmake .. \
-             -G Ninja \
+             -B build -G Ninja \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
             -DZ3_BUILD_LIBZ3_SHARED=ON \
             -DZ3_BUILD_EXECUTABLE=OFF \
             -DZ3_BUILD_TEST_EXECUTABLES=OFF \
-            -DCMAKE_VERBOSE_MAKEFILE=TRUE \
+            -DZ3_LINK_TIME_OPTIMIZATION=ON \
             -DZ3_BUILD_JAVA_BINDINGS=OFF \
             -DZ3_BUILD_OCAML_BINDINGS=ON \
             -DZ3_BUILD_PYTHON_BINDINGS=ON \
@@ -170,15 +169,14 @@ jobs:
 
       - name: Configure with CMake
         run: |
-          mkdir -p build
-          cd build
           eval $(opam env)
           cmake .. \
-             -G Ninja \
+             -B build -G Ninja \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
             -DZ3_BUILD_LIBZ3_SHARED=ON \
             -DZ3_BUILD_EXECUTABLE=OFF \
             -DZ3_BUILD_TEST_EXECUTABLES=OFF \
-            -DCMAKE_VERBOSE_MAKEFILE=TRUE \
+            -DZ3_LINK_TIME_OPTIMIZATION=ON \
             -DZ3_BUILD_JAVA_BINDINGS=OFF \
           	-DZ3_BUILD_LIBZ3_CORE=OFF \
             -DZ3_ROOT=${Z3_PREFIX} \
@@ -215,3 +213,79 @@ jobs:
 
       #   SRC_DIR="$OPAM_SWITCH_PREFIX/.opam-switch/sources/z3.dev"
       #   cp "$SRC_DIR/examples/ml/ml_example.ml" .
+
+  packaging-from-prebuilt-ubuntu:
+    name: packaging-from-prebuilt-ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/canary-test-setup
+        with:
+          ocaml-version: "5.4.0"
+
+      - name: Install system dependencies (Linux)
+        shell: bash
+        run: |
+          sudo apt install -y z3
+          pkg-config --variable=prefix z3
+          echo "Z3_PREFIX=$(pkg-config --variable=prefix z3)" >> "$GITHUB_ENV"
+          echo "Detected Z3_PREFIX=$Z3_PREFIX"
+
+      - name: Configure with CMake (external libz3)
+        run: |
+          eval $(opam env)
+          cmake .. \
+             -B build -G Ninja \
+            -DCMAKE_VERBOSE_MAKEFILE=ON \
+            -DZ3_BUILD_LIBZ3_SHARED=ON \
+            -DZ3_BUILD_EXECUTABLE=OFF \
+            -DZ3_BUILD_TEST_EXECUTABLES=OFF \
+            -DZ3_LINK_TIME_OPTIMIZATION=ON \
+            -DZ3_BUILD_JAVA_BINDINGS=OFF \
+          	-DZ3_BUILD_LIBZ3_CORE=OFF \
+            -DZ3_ROOT=${Z3_PREFIX} \
+            -DZ3_BUILD_OCAML_BINDINGS=ON \
+            -DZ3_BUILD_PYTHON_BINDINGS=ON
+
+      - name: Build OCaml and Python bindings
+        run: |
+          eval $(opam env)
+          ninja -C build build_z3_ocaml_bindings
+          ninja -C build build_z3_python_bindings
+
+      - name: Install z3.dev from contrib/canary local opam repo
+        run: |
+          eval $(opam env)
+          opam repo add local-z3-dev "file://$PWD/contrib/canary/opam-local-repo" --rank=1 || opam repo set-url local-z3-dev "file://$PWD/contrib/canary/opam-local-repo"
+          opam update local-z3-dev
+          opam remove -y z3.dev || true
+          opam install -y z3.dev --verbose
+
+      - name: Compile ml_example_with_pkg.byte
+        run: |
+          eval $(opam env)
+          ocamlfind ocamlc -o ml_example_with_pkg.byte \
+            -package z3 \
+            -linkpkg \
+            examples/ml/ml_example.ml
+
+      - name: Run ml_example_with_pkg.byte
+        run: |
+          eval $(opam env)
+          
+          ocamlrun ./ml_example_with_pkg.byte
+
+      - name: Compile ml_example_with_pkg (native)
+        run: |
+          eval $(opam env)
+          ocamlfind ocamlopt -o ml_example_with_pkg \
+            -package z3 \
+            -linkpkg \
+            examples/ml/ml_example.ml
+
+      - name: Run ml_example_with_pkg (native)
+        run: |
+          
+          ./ml_example_with_pkg
