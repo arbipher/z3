@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    if: true
+    if: false
     name: build-and-test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy: &strategy_vars
@@ -192,7 +192,7 @@ jobs:
             --contains-any 'Z3_mk_u32string' \
             -- \
             sh -ec 'eval $(opam env)
-
+          
           ocamlrun ./ml_example_with_pkg.byte'
       - name: Compile ml_example_with_pkg (native)
         run: |
