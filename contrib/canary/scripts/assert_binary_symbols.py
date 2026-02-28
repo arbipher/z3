@@ -11,11 +11,23 @@ import sys
 from typing import Iterable, Set
 
 
-def run_nm(path: str, dynamic: bool) -> str:
+def is_macos() -> bool:
+    return sys.platform == "darwin"
+
+
+def nm_args(path: str, dynamic: bool) -> list[str]:
+    if is_macos():
+        # `nm -D` is GNU-specific; macOS `nm` exposes external symbols with `-g`.
+        return ["nm", "-g", path]
     cmd = ["nm"]
     if dynamic:
         cmd.append("-D")
     cmd.append(path)
+    return cmd
+
+
+def run_nm(path: str, dynamic: bool) -> str:
+    cmd = nm_args(path, dynamic)
     proc = subprocess.run(
         cmd,
         text=True,
@@ -54,7 +66,13 @@ def parse_defined_symbols(nm_output: str, prefix: str) -> Set[str]:
 
 
 def is_dynamic_nm_target(path: str) -> bool:
-    return path.endswith(".so") or ".so." in os.path.basename(path)
+    base = os.path.basename(path)
+    return (
+        path.endswith(".so")
+        or ".so." in base
+        or path.endswith(".dylib")
+        or ".dylib." in base
+    )
 
 
 def collect_required(required_libs: Iterable[str], prefix: str) -> Set[str]:

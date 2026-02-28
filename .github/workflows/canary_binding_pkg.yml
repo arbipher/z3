@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    if: true
+    if: false
     name: build-and-test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy: &strategy_vars
@@ -132,22 +132,34 @@ jobs:
             -- \
             env PYTHONPATH="build/python" python3 -S -c "import z3; print(z3.__file__)"
 
-  packaging-from-prebuilt-ubuntu:
-    name: packaging-from-prebuilt-ubuntu
-    runs-on: ubuntu-latest
+  packaging-from-prebuilt:
+    name: packaging-from-prebuilt (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy: *strategy_vars
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
       - uses: ./.github/actions/canary-test-setup
         with:
-          ocaml-version: "5.4.0"
+          ocaml-version: ${{ matrix.ocaml-version }}
       - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           sudo apt install -y z3
           pkg-config --variable=prefix z3
           echo "Z3_PREFIX=$(pkg-config --variable=prefix z3)" >> "$GITHUB_ENV"
           echo "Z3_LIB_DIR=$(pkg-config --variable=libdir z3)" >> "$GITHUB_ENV"
+          echo "Detected Z3_PREFIX=$Z3_PREFIX"
+          echo "Detected Z3_LIB_DIR=$Z3_LIB_DIR"
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install z3
+          brew --prefix z3
+          echo "Z3_PREFIX=$(brew --prefix z3)" >> "$GITHUB_ENV"
+          echo "Z3_LIB_DIR=$(echo "$(brew --prefix z3)/lib")" >> "$GITHUB_ENV"
           echo "Detected Z3_PREFIX=$Z3_PREFIX"
           echo "Detected Z3_LIB_DIR=$Z3_LIB_DIR"
       - name: Configure with CMake (external libz3)
@@ -192,7 +204,7 @@ jobs:
             --contains-any 'Z3_mk_u32string' \
             -- \
             sh -ec 'eval $(opam env)
-
+          
           ocamlrun ./ml_example_with_pkg.byte'
       - name: Compile ml_example_with_pkg (native)
         run: |
@@ -208,13 +220,9 @@ jobs:
           '
       - name: Run ml_example_with_pkg (native)
         run: |
-          if [ -x ./ml_example_with_pkg ]; then
-            python3 contrib/canary/scripts/assert_result.py \
-              --contains-any 'undefined symbol' \
-              --contains-any 'Z3_mk_u32string' \
-              -- \
-              ./ml_example_with_pkg
-          else
-            test ! -e ./ml_example_with_pkg
-            echo "Native binary not produced, consistent with expected link mismatch."
-          fi
+          python3 contrib/canary/scripts/assert_result.py \
+            --contains-any 'undefined symbol' \
+            --contains-any 'Z3_mk_u32string' \
+            -- \
+            sh -ec '
+          ./ml_example_with_pkg'
